@@ -16,6 +16,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".module.thread.MultiThreadActivity"/>
+        <activity android:name=".java.JavaActivity"/>
+        <activity android:name=".java.thread.MultiThreadActivity"/>
+        <activity android:name=".android.AndroidActivity"/>
+        <activity android:name=".android.bus.BusFirstActivity"/>
+        <activity android:name=".android.bus.BusSecondActivity"/>
     </application>
 </manifest>

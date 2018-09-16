@@ -1,4 +1,4 @@
-package com.practice.app.module.thread;
+package com.practice.app.java.thread;
 
 import android.os.Handler;
 

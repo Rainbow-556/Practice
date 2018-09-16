@@ -12,14 +12,9 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
         <Button
-            android:id="@+id/btn_java"
+            android:id="@+id/btn_multi_thread"
             android:layout_width="200dp"
             android:layout_height="45dp"
-            android:text="java"/>
-        <Button
-            android:id="@+id/btn_android"
-            android:layout_width="200dp"
-            android:layout_height="45dp"
-            android:text="android"/>
+            android:text="多线程"/>
     </LinearLayout>
 </ScrollView>
