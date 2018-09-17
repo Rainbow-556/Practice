@@ -12,6 +12,8 @@ import android.widget.LinearLayout;
 
 import com.practice.app.util.FLogger;
 
+import java.util.ArrayList;
+
 /**
  * Created by lixiang on 2018/9/16.
  */
@@ -34,6 +36,7 @@ public final class BusFirstActivity extends AppCompatActivity {
         btnUpdate.setText("update value");
         linearLayout.addView(btnUpdate, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
+        // bus 1
         final ObservableData<Integer> observableData = Bus.get().with("addNumber");
         observableData.observe(this, new EventObserver<Integer>() {
             @Override
@@ -53,6 +56,17 @@ public final class BusFirstActivity extends AppCompatActivity {
             public void onClick(View v) {
                 data++;
                 observableData.post(data);
+                Bus2.get().post(1, 9);
+            }
+        });
+        // bus 2
+        ArrayList<Integer> events = new ArrayList<>(2);
+        events.add(1);
+        events.add(2);
+        Bus2.get().register(this, events, new EventObserver2() {
+            @Override
+            public void onChanged(int event, Object data) {
+                FLogger.msg("Bus2 onChanged " + event + ", " + data);
             }
         });
         //
