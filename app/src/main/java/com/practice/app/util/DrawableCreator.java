@@ -1,7 +1,9 @@
 package com.practice.app.util;
 
+import android.graphics.DashPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.PathEffect;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -15,7 +17,7 @@ import android.graphics.drawable.shapes.RoundRectShape;
  */
 public final class DrawableCreator {
     private float[] radii;
-    private float borderWidth;
+    private float borderWidth, dashWidth, dashGap;
     private int fillColor, borderColor;
     private int[] gradientColors;
     private float[] gradientSegments;
@@ -47,9 +49,11 @@ public final class DrawableCreator {
         return this;
     }
 
-    public DrawableCreator border(int borderColor, float borderWidth) {
+    public DrawableCreator border(int borderColor, float borderWidth, float dashWidth, float dashGap) {
         this.borderColor = borderColor;
         this.borderWidth = borderWidth;
+        this.dashWidth = dashWidth;
+        this.dashGap = dashGap;
         return this;
     }
 
@@ -85,6 +89,39 @@ public final class DrawableCreator {
         return result;
     }
 
+    public Drawable create_2() {
+        if (gradientSegments != null && gradientSegments.length > 0) {
+            ShapeDrawable.ShaderFactory shaderFactory = new ShapeDrawable.ShaderFactory() {
+                float[] positions = new float[4];
+
+                @Override
+                public Shader resize(int width, int height) {
+                    convertGradientPosition(width, height, positions);
+                    LinearGradient lg = new LinearGradient(positions[0], positions[1], positions[2], positions[3],
+                            gradientColors,
+                            gradientSegments,
+                            Shader.TileMode.CLAMP);
+                    return lg;
+                }
+            };
+            ShapeDrawable shapeDrawable = new ShapeDrawable(new RoundRectShape(radii, null, null));
+            shapeDrawable.setShaderFactory(shaderFactory);
+            return addBorderIfNeed(shapeDrawable);
+        }
+        GradientDrawable gradientDrawable = new GradientDrawable();
+        gradientDrawable.setCornerRadii(radii);
+        if (gradientColors == null) {
+            gradientDrawable.setColor(fillColor);
+        } else {
+            gradientDrawable.setColors(gradientColors);
+            gradientDrawable.setOrientation(gradientOrientation);
+        }
+        if (borderWidth > 0 && borderColor != 0) {
+            gradientDrawable.setStroke((int) borderWidth, borderColor, dashWidth, dashGap);
+        }
+        return gradientDrawable;
+    }
+
     private Drawable addBorderIfNeed(Drawable drawable) {
         if (borderWidth == 0 || borderColor == 0) {
             return drawable;
@@ -100,6 +137,10 @@ public final class DrawableCreator {
         borderPaint.setStyle(Paint.Style.STROKE);
         borderPaint.setStrokeWidth(borderWidth);
         borderPaint.setColor(borderColor);
+        if (dashWidth > 0 && dashGap > 0) {
+            PathEffect effect = new DashPathEffect(new float[]{dashWidth, dashGap}, 0);
+            borderPaint.setPathEffect(effect);
+        }
         layers[1] = borderLayer;
         LayerDrawable layerDrawable = new LayerDrawable(layers);
         int dis = (int) Math.ceil(borderWidth / 2);

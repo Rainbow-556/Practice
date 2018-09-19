@@ -6,8 +6,6 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.practice.app.util.FLogger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
