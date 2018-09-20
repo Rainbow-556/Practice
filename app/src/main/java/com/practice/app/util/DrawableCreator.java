@@ -72,7 +72,7 @@ public final class DrawableCreator {
         return this;
     }
 
-    public Drawable create() {
+    private Drawable create_2() {
         Drawable result = null;
         if (gradientColors != null && gradientOrientation != null) {
             result = createGradientDrawable();
@@ -89,7 +89,7 @@ public final class DrawableCreator {
         return result;
     }
 
-    public Drawable create_2() {
+    public Drawable create() {
         if (gradientSegments != null && gradientSegments.length > 0) {
             ShapeDrawable.ShaderFactory shaderFactory = new ShapeDrawable.ShaderFactory() {
                 float[] positions = new float[4];
@@ -144,7 +144,7 @@ public final class DrawableCreator {
         layers[1] = borderLayer;
         LayerDrawable layerDrawable = new LayerDrawable(layers);
         int dis = (int) Math.ceil(borderWidth / 2);
-        // 给border留出空间
+        // 使border的外边界与first layer的外边界对齐
         layerDrawable.setLayerInset(1, dis, dis, dis, dis);
         return layerDrawable;
     }
