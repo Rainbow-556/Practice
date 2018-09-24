@@ -21,5 +21,6 @@
         <activity android:name=".android.AndroidActivity"/>
         <activity android:name=".android.bus.BusFirstActivity"/>
         <activity android:name=".android.bus.BusSecondActivity"/>
+        <activity android:name=".android.looppager.LoopViewPagerActivity"/>
     </application>
 </manifest>

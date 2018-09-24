@@ -16,5 +16,10 @@
             android:layout_width="200dp"
             android:layout_height="45dp"
             android:text="Bus"/>
+        <Button
+            android:id="@+id/btn_pager"
+            android:layout_width="200dp"
+            android:layout_height="45dp"
+            android:text="Loop pager"/>
     </LinearLayout>
 </ScrollView>
