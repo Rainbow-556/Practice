@@ -7,7 +7,7 @@ import android.support.v4.view.ViewPager;
  */
 public final class TransformPageScrollListener implements ViewPager.OnPageChangeListener {
     private OnPageScrollListener mOnPageScrollListener;
-    private double mLastPositionOffsetSum;  // 上一次滑动总的偏移量
+    private float mLastPositionOffsetSum;  // 上一次滑动总的偏移量
 
     public TransformPageScrollListener(OnPageScrollListener listener) {
         mOnPageScrollListener = listener;

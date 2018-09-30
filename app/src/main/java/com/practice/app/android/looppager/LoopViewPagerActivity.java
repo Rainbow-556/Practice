@@ -42,7 +42,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         setContentView(mFrameLayout);
     }
 
-    private void initPager(ViewPager pager) {
+    private void initPager(final ViewPager pager) {
         pager.setOffscreenPageLimit(2);
         pager.setPageMargin(20 * 3);
         final ArrayList<String> list = new ArrayList<>();
@@ -58,13 +58,15 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         int currentItem = pager.getCurrentItem() % size;
         final float dotMaxScale = 0.5f;
         for (int i = 0; i < size; i++) {
-            View view = indicators.getChildAt(i);
+            RoundRectIndicatorView view = (RoundRectIndicatorView) indicators.getChildAt(i);
             if (i != currentItem) {
-//                view.setPivotX(25 * 3);
-                view.setScaleX(dotMaxScale);
-                view.setAlpha(dotMaxScale);
+//                view.setPivotX(20 * 3);
+//                view.setScaleX(dotMaxScale);
+//                view.setAlpha(dotMaxScale);
+                view.update(false, 0);
             } else {
 //                view.setPivotX(0);
+                view.update(true, 1);
             }
         }
         // anim
@@ -94,6 +96,8 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
 //                    }
 //                }
                 float scale = dotMaxScale + percent * dotMaxScale;
+                if (enterIndicator.getScaleX() == dotMaxScale) {
+                }
                 enterIndicator.setScaleX(scale);
                 enterIndicator.setAlpha(scale);
                 //
@@ -111,15 +115,75 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
             }
         };
         TransformPageScrollListener transformPageScrollListener = new TransformPageScrollListener(onPageScrollListener);
-        pager.addOnPageChangeListener(transformPageScrollListener);
+//        pager.addOnPageChangeListener(transformPageScrollListener);
         /*
         pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            int currPage, tempCurrPage;
+            int currPage, prePosition;
+            float mLastPositionOffsetSum;  // 上一次滑动总的偏移量
+
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-//                FLogger.msg("onPageScrolled --> position=" + position + ", positionOffset=" + positionOffset);
-                int realPosition = adapter.getRealPosition(currPage);
+                FLogger.msg("onPageScrolled --> position=" + position + ", positionOffset=" + positionOffset);
+                if (prePosition == position) {
+                    // 不改变缩放锚点
+                    int realPosition = adapter.getRealPosition(position);
+                    View currView = indicators.getChildAt(realPosition);
+                    View nextView = indicators.getChildAt(realPosition + 1);
+                    currView.setPivotX(0);
+                    currView.setScaleX(1 - dotMaxScale * positionOffset);
+                    if (nextView != null) {
+                        nextView.setPivotX(nextView.getWidth());
+                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    }
+                } else {
+                    // 改变缩放锚点
+                    int realPosition = adapter.getRealPosition(position);
+                    View currView = indicators.getChildAt(realPosition);
+                    View nextView = indicators.getChildAt(realPosition + 1);
+                    currView.setPivotX(currView.getWidth());
+                    currView.setScaleX(1 - dotMaxScale * positionOffset);
+                    if (nextView != null) {
+                        if (prePosition < position) {
+                            nextView.setPivotX(currView.getWidth());
+                        } else {
+                            nextView.setPivotX(0);
+                        }
+                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    }
+                    prePosition = position;
+                }
+                if (true) {
+                    return;
+                }
+                // 当前总的偏移量
+                final float currentPositionOffsetSum = position + positionOffset;
+                // 上次滑动的总偏移量大于此次滑动的总偏移量，页面从右向左进入(手指从右向左滑动)
+                final boolean rightToLeft = mLastPositionOffsetSum <= currentPositionOffsetSum;
+                if (currentPositionOffsetSum == mLastPositionOffsetSum) {
+                    return;
+                }
+                mLastPositionOffsetSum = currentPositionOffsetSum;
+                int realPosition = adapter.getRealPosition(position);
+                if (rightToLeft) {
+                    View currView = indicators.getChildAt(realPosition);
+                    View nextView = indicators.getChildAt(realPosition + 1);
+                    currView.setPivotX(0);
+                    currView.setScaleX(1 - dotMaxScale * positionOffset);
+                    if (nextView != null) {
+                        nextView.setPivotX(nextView.getWidth());
+                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    }
+                } else {
+                    View currView = indicators.getChildAt(realPosition);
+                    View preView = indicators.getChildAt(realPosition + 1);
+                    currView.setPivotX(currView.getWidth());
+                    currView.setScaleX(1 - dotMaxScale * positionOffset);
+                    if (preView != null) {
+                        preView.setPivotX(0);
+                        preView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    }
+                }
                 if (position == currPage) {
                     FLogger.msg("next, percent=" + positionOffset);
                     View currView = indicators.getChildAt(realPosition);
@@ -134,7 +198,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     // []
                     FLogger.msg("pre, percent=" + (1 - positionOffset));
                     View currView = indicators.getChildAt(realPosition);
-                    View preView = indicators.getChildAt(realPosition - 1);
+                    View preView = indicators.getChildAt(realPosition + 1);
 //                    currView.setPivotX(currView.getWidth());
                     currView.setScaleX(1 - dotMaxScale * positionOffset);
                     if (preView != null) {
@@ -147,22 +211,45 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 FLogger.msg("onPageSelected(xxxx) --> position=" + position);
-                tempCurrPage = position;
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
                 if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    currPage = tempCurrPage;
+                    FLogger.msg("idle");
+                    currPage = pager.getCurrentItem();
                 }
             }
         });
         */
+        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+//                if (adapter.getRealPosition(position) == 0) {
+//                    int childCount = indicators.getChildCount();
+//                    for (int i = 1; i < childCount; i++) {
+//                        View view = indicators.getChildAt(i);
+//                        view.setPivotX(view.getWidth());
+//                    }
+//                }
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
         pager.setPageTransformer(true, new ViewPager.PageTransformer() {
             float pageMaxScale = 0.2f;
 
             @Override
             public void transformPage(View page, float position) {
+                int dotIndex = (int) page.getTag();
+                FLogger.msg("transformPage() --> " + dotIndex + ", " + position);
+                RoundRectIndicatorView dotView = (RoundRectIndicatorView) indicators.getChildAt(dotIndex);
                 // page
                 if (position >= -1 && position < 0) {
                     // [-1, 0]，左边的item -> 中间
@@ -171,6 +258,10 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     float scale = 1 + pageMaxScale * position;
                     page.setScaleX(scale);
                     page.setScaleY(scale);
+                    //
+//                    dotView.setPivotX(0);
+//                    dotView.setScaleX(dotMaxScale + dotMaxScale * (1 + position));
+                    dotView.update(true, 1 + position);
                 } else if (position >= 0 && position <= 1) {
                     // [0, 1]，中间的item -> 右边
                     page.setPivotX(0);
@@ -178,6 +269,14 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     float scale = 1 - pageMaxScale * position;
                     page.setScaleX(scale);
                     page.setScaleY(scale);
+                    //
+//                    if (dotIndex == 0) {
+//                        dotView.setPivotX(0);
+//                    } else {
+//                        dotView.setPivotX(dotView.getWidth());
+//                    }
+//                    dotView.setScaleX(1 - dotMaxScale * position);
+                    dotView.update(false, 1 - position + 0.5f);
                 } else {
                     if (position < -1) {
                         page.setPivotX(page.getWidth());
@@ -188,6 +287,8 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     }
                     page.setScaleX(1 - pageMaxScale);
                     page.setScaleY(1 - pageMaxScale);
+                    //
+//                    dotView.setScaleX(dotMaxScale);
                 }
             }
         });
@@ -201,12 +302,11 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         lpParent.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
         lpParent.bottomMargin = 170 * 3;
         for (int i = 0; i < size; i++) {
-            View view = new View(this);
-            view.setBackgroundColor(Color.BLACK);
-            LinearLayout.LayoutParams lpIndicator = new LinearLayout.LayoutParams(25 * 3,
+            RoundRectIndicatorView view = new RoundRectIndicatorView(this);
+            LinearLayout.LayoutParams lpIndicator = new LinearLayout.LayoutParams(10 * 3,
                     15);
             if (i != 0) {
-                lpIndicator.leftMargin = 6 * 3;
+//                lpIndicator.leftMargin = 3;
             }
             parent.addView(view, lpIndicator);
         }
@@ -246,6 +346,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                 textView = cacheViews.remove();
             }
             textView.setText(data.get(realPosition));
+            textView.setTag(realPosition);
             container.addView(textView);
             return textView;
         }
