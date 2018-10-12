@@ -1,5 +1,6 @@
 package com.practice.app.android.looppager;
 
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -32,7 +33,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         mFrameLayout.setClipChildren(false);
         ViewPager pager = new ViewPager(this);
         pager.setClipChildren(false);
-        int pagerHeight = 170 * 3, margin = 35 * 3;
+        int pagerHeight = 140 * 3, margin = 20 * 3;
         FrameLayout.LayoutParams lpPager = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, pagerHeight);
         lpPager.leftMargin = margin;
         lpPager.rightMargin = margin;
@@ -44,212 +45,137 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
 
     private void initPager(final ViewPager pager) {
         pager.setOffscreenPageLimit(2);
-        pager.setPageMargin(20 * 3);
+        pager.setPageMargin(6 * 3);
         final ArrayList<String> list = new ArrayList<>();
         list.add("0");
         list.add("1");
         list.add("2");
-        int size = list.size();
+        final int size = list.size();
         final LinearLayout indicators = addIndicators(size);
         final MyAdapter adapter = new MyAdapter();
         adapter.setData(list);
         pager.setAdapter(adapter);
-//        pager.setCurrentItem(4 * list.size());
-        int currentItem = pager.getCurrentItem() % size;
-        final float dotMaxScale = 0.5f;
+        pager.setCurrentItem(3 * list.size());
+        final int currentItem = pager.getCurrentItem() % size;
         for (int i = 0; i < size; i++) {
             RoundRectIndicatorView view = (RoundRectIndicatorView) indicators.getChildAt(i);
             if (i != currentItem) {
-//                view.setPivotX(20 * 3);
-//                view.setScaleX(dotMaxScale);
-//                view.setAlpha(dotMaxScale);
                 view.update(false, 0);
             } else {
-//                view.setPivotX(0);
                 view.update(true, 1);
             }
         }
         // anim
-        OnPageScrollListener onPageScrollListener = new OnPageScrollListener() {
-            @Override
-            public void onPageScroll(int enterPosition, int leavePosition, float percent) {
-                enterPosition = adapter.getRealPosition(enterPosition);
-                leavePosition = adapter.getRealPosition(leavePosition);
-                FLogger.msg("onPageScrolled()"
-                        + "    进入页面：" + enterPosition
-                        + "    离开页面：" + leavePosition
-                        + "    滑动百分比：" + percent);
-                View enterIndicator = indicators.getChildAt(enterPosition);
-                View leaveIndicator = indicators.getChildAt(leavePosition);
-//                if (enterPosition > leavePosition) {
-//                    enterIndicator.setPivotX(enterIndicator.getWidth());
-//                    leaveIndicator.setPivotX(0);
-//                } else {
-//                    enterIndicator.setPivotX(enterIndicator.getWidth());
-//                    leaveIndicator.setPivotX(0);
-//                }
-//                int childCount = indicators.getChildCount();
-//                for (int i = 0; i < childCount; i++) {
-//                    if (i != enterPosition && i != leavePosition) {
-//                        View view = indicators.getChildAt(i);
-//                        view.setPivotX(view.getWidth());
-//                    }
-//                }
-                float scale = dotMaxScale + percent * dotMaxScale;
-                if (enterIndicator.getScaleX() == dotMaxScale) {
-                }
-                enterIndicator.setScaleX(scale);
-                enterIndicator.setAlpha(scale);
-                //
-                scale = 1 - percent * dotMaxScale;
-                leaveIndicator.setScaleX(scale);
-                leaveIndicator.setAlpha(scale);
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-            }
-        };
-        TransformPageScrollListener transformPageScrollListener = new TransformPageScrollListener(onPageScrollListener);
-//        pager.addOnPageChangeListener(transformPageScrollListener);
-        /*
         pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            int currPage, prePosition;
-            float mLastPositionOffsetSum;  // 上一次滑动总的偏移量
-
+            int lastPosition, lastItem, currItem;
+            boolean isIdle;
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                FLogger.msg("onPageScrolled --> position=" + position + ", positionOffset=" + positionOffset);
-                if (prePosition == position) {
-                    // 不改变缩放锚点
-                    int realPosition = adapter.getRealPosition(position);
-                    View currView = indicators.getChildAt(realPosition);
-                    View nextView = indicators.getChildAt(realPosition + 1);
-                    currView.setPivotX(0);
-                    currView.setScaleX(1 - dotMaxScale * positionOffset);
-                    if (nextView != null) {
-                        nextView.setPivotX(nextView.getWidth());
-                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
-                    }
-                } else {
-                    // 改变缩放锚点
-                    int realPosition = adapter.getRealPosition(position);
-                    View currView = indicators.getChildAt(realPosition);
-                    View nextView = indicators.getChildAt(realPosition + 1);
-                    currView.setPivotX(currView.getWidth());
-                    currView.setScaleX(1 - dotMaxScale * positionOffset);
-                    if (nextView != null) {
-                        if (prePosition < position) {
-                            nextView.setPivotX(currView.getWidth());
-                        } else {
-                            nextView.setPivotX(0);
+                if (isIdle && positionOffset > 0) {
+                    lastPosition = pager.getCurrentItem();
+                    FLogger.w("lastPosition=" + lastPosition);
+                }
+                isIdle = positionOffset <= 0.001 || positionOffset >= 0.998f;
+                if (isIdle) {
+                    return;
+                }
+                boolean toNext = position == lastPosition;
+                FLogger.msg("toNext=" + toNext + ", position=" + position + ", positionOffset=" + positionOffset);
+                int realLastPosition = adapter.getRealPosition(lastPosition);
+                RoundRectIndicatorView leftDotView = (RoundRectIndicatorView) indicators.getChildAt(realLastPosition);
+                RoundRectIndicatorView rightDotView = null;
+                if (toNext) {
+                    if (adapter.getRealPosition(lastPosition) == adapter.getRealCount() - 1) {
+                        if (leftDotView != null) {
+                            leftDotView.update(true, 1 - positionOffset);
                         }
-                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                        return;
                     }
-                    prePosition = position;
-                }
-                if (true) {
-                    return;
-                }
-                // 当前总的偏移量
-                final float currentPositionOffsetSum = position + positionOffset;
-                // 上次滑动的总偏移量大于此次滑动的总偏移量，页面从右向左进入(手指从右向左滑动)
-                final boolean rightToLeft = mLastPositionOffsetSum <= currentPositionOffsetSum;
-                if (currentPositionOffsetSum == mLastPositionOffsetSum) {
-                    return;
-                }
-                mLastPositionOffsetSum = currentPositionOffsetSum;
-                int realPosition = adapter.getRealPosition(position);
-                if (rightToLeft) {
-                    View currView = indicators.getChildAt(realPosition);
-                    View nextView = indicators.getChildAt(realPosition + 1);
-                    currView.setPivotX(0);
-                    currView.setScaleX(1 - dotMaxScale * positionOffset);
-                    if (nextView != null) {
-                        nextView.setPivotX(nextView.getWidth());
-                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    if (leftDotView != null) {
+                        leftDotView.update(true, 1 - positionOffset);
+                    }
+                    rightDotView = (RoundRectIndicatorView) indicators.getChildAt(adapter.getRealPosition(lastPosition + 1));
+                    if (rightDotView != null) {
+                        rightDotView.update(false, positionOffset);
                     }
                 } else {
-                    View currView = indicators.getChildAt(realPosition);
-                    View preView = indicators.getChildAt(realPosition + 1);
-                    currView.setPivotX(currView.getWidth());
-                    currView.setScaleX(1 - dotMaxScale * positionOffset);
-                    if (preView != null) {
-                        preView.setPivotX(0);
-                        preView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    if (adapter.getRealPosition(lastPosition) == 0) {
+                        if (leftDotView != null) {
+                            leftDotView.update(false, positionOffset);
+                        }
+                        return;
                     }
-                }
-                if (position == currPage) {
-                    FLogger.msg("next, percent=" + positionOffset);
-                    View currView = indicators.getChildAt(realPosition);
-                    View nextView = indicators.getChildAt(realPosition + 1);
-//                    currView.setPivotX(0);
-                    currView.setScaleX(1 - dotMaxScale * positionOffset);
-                    if (nextView != null) {
-//                        nextView.setPivotX(nextView.getWidth());
-                        nextView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    if (leftDotView != null) {
+                        leftDotView.update(false, positionOffset);
                     }
-                } else {
-                    // []
-                    FLogger.msg("pre, percent=" + (1 - positionOffset));
-                    View currView = indicators.getChildAt(realPosition);
-                    View preView = indicators.getChildAt(realPosition + 1);
-//                    currView.setPivotX(currView.getWidth());
-                    currView.setScaleX(1 - dotMaxScale * positionOffset);
-                    if (preView != null) {
-//                        preView.setPivotX(0);
-                        preView.setScaleX(dotMaxScale + dotMaxScale * positionOffset);
+                    rightDotView = (RoundRectIndicatorView) indicators.getChildAt(adapter.getRealPosition(lastPosition - 1));
+                    if (rightDotView != null) {
+                        rightDotView.update(true, 1 - positionOffset);
                     }
                 }
             }
 
             @Override
             public void onPageSelected(int position) {
-                FLogger.msg("onPageSelected(xxxx) --> position=" + position);
+                currItem = position;
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
                 if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    FLogger.msg("idle");
-                    currPage = pager.getCurrentItem();
+                    int realLastItem = adapter.getRealPosition(lastItem);
+                    int realCurrItem = adapter.getRealPosition(currItem);
+                    if (realLastItem == adapter.getRealCount() - 1 && realCurrItem == 0) {
+                        // 从最后一页滑到第一页
+                        int duration = 150;
+                        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
+                        animator.setDuration(duration);
+                        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                            @Override
+                            public void onAnimationUpdate(ValueAnimator animation) {
+                                float value = (float) animation.getAnimatedValue();
+                                RoundRectIndicatorView firstDot = (RoundRectIndicatorView) indicators.getChildAt(0);
+                                firstDot.update(true, value);
+                            }
+                        });
+                        animator.start();
+                        int childCount = indicators.getChildCount();
+                        for (int i = 1; i < childCount; i++) {
+                            RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
+                            dot.animateToOtherEnd(duration);
+                        }
+                    } else if (realLastItem == 0 && realCurrItem == adapter.getRealCount() - 1) {
+                        // 从第一页滑到最后一页
+                        final int childCount = indicators.getChildCount();
+                        int duration = 150;
+                        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
+                        animator.setDuration(duration);
+                        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                            @Override
+                            public void onAnimationUpdate(ValueAnimator animation) {
+                                float value = (float) animation.getAnimatedValue();
+                                RoundRectIndicatorView lastDot = (RoundRectIndicatorView) indicators.getChildAt(childCount - 1);
+                                lastDot.update(false, value);
+                            }
+                        });
+                        animator.start();
+                        for (int i = 0; i < childCount - 1; i++) {
+                            RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
+                            dot.animateToOtherEnd(duration);
+                        }
+                    }
+                    lastItem = currItem;
                 }
             }
         });
-        */
-        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-//                if (adapter.getRealPosition(position) == 0) {
-//                    int childCount = indicators.getChildCount();
-//                    for (int i = 1; i < childCount; i++) {
-//                        View view = indicators.getChildAt(i);
-//                        view.setPivotX(view.getWidth());
-//                    }
-//                }
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-            }
-        });
         pager.setPageTransformer(true, new ViewPager.PageTransformer() {
-            float pageMaxScale = 0.2f;
+            float pageMaxScale = 0.1f;
 
             @Override
             public void transformPage(View page, float position) {
-                int dotIndex = (int) page.getTag();
-                FLogger.msg("transformPage() --> " + dotIndex + ", " + position);
-                RoundRectIndicatorView dotView = (RoundRectIndicatorView) indicators.getChildAt(dotIndex);
+//                int dotIndex = (int) page.getTag();
+//                RoundRectIndicatorView dotView = (RoundRectIndicatorView) indicators.getChildAt(dotIndex);
                 // page
                 if (position >= -1 && position < 0) {
                     // [-1, 0]，左边的item -> 中间
@@ -261,7 +187,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     //
 //                    dotView.setPivotX(0);
 //                    dotView.setScaleX(dotMaxScale + dotMaxScale * (1 + position));
-                    dotView.update(true, 1 + position);
+//                    dotView.update(true, 1 + position);
                 } else if (position >= 0 && position <= 1) {
                     // [0, 1]，中间的item -> 右边
                     page.setPivotX(0);
@@ -276,7 +202,8 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
 //                        dotView.setPivotX(dotView.getWidth());
 //                    }
 //                    dotView.setScaleX(1 - dotMaxScale * position);
-                    dotView.update(false, 1 - position + 0.5f);
+//                    float add = 0.5f;
+//                    dotView.update(false, 1 - position);
                 } else {
                     if (position < -1) {
                         page.setPivotX(page.getWidth());
@@ -287,8 +214,6 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     }
                     page.setScaleX(1 - pageMaxScale);
                     page.setScaleY(1 - pageMaxScale);
-                    //
-//                    dotView.setScaleX(dotMaxScale);
                 }
             }
         });

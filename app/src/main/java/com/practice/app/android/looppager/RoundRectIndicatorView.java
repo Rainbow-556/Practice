@@ -1,5 +1,6 @@
 package com.practice.app.android.looppager;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -41,18 +42,25 @@ public final class RoundRectIndicatorView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        mPaint.setStrokeWidth(getHeight());
-        float rectWidth = Math.max(getHeight(), mProgress * getWidth());
-        if (isLeftAnchor) {
-            mDrawRect.set(0, 0, rectWidth, getHeight());
-        } else {
-            mDrawRect.set(getWidth() - rectWidth, 0, getWidth(), getHeight());
+        final int viewHeight = getHeight();
+        if (isDrawByProgress) {
+            final int viewWidth = getWidth();
+            mPaint.setStrokeWidth(viewHeight);
+            float rectWidth = viewHeight + mProgress * (viewWidth - viewHeight);
+            if (isLeftAnchor) {
+                mDrawRect.set(0, 0, rectWidth, viewHeight);
+            } else {
+                mDrawRect.set(viewWidth - rectWidth, 0, viewWidth, viewHeight);
+            }
         }
-        float r = getHeight() / 2;
+        final float r = viewHeight / 2;
         canvas.drawRoundRect(mDrawRect, r, r, mPaint);
     }
 
+    private boolean isDrawByProgress = true;
+
     public void update(boolean isLeftAnchor, float progress) {
+        isDrawByProgress = true;
         this.isLeftAnchor = isLeftAnchor;
         if (progress < 0) {
             progress = 0;
@@ -61,5 +69,26 @@ public final class RoundRectIndicatorView extends View {
         }
         this.mProgress = progress;
         postInvalidate();
+    }
+
+    public void animateToOtherEnd(int duration) {
+        isDrawByProgress = false;
+        final boolean atLeft = mDrawRect.left == 0;
+        final int totalSpace = getWidth() - getHeight();
+        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
+        animator.setDuration(duration);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float value = (float) animation.getAnimatedValue();
+                if (atLeft) {
+                    mDrawRect.offsetTo(totalSpace * value, 0);
+                } else {
+                    mDrawRect.offsetTo(totalSpace - totalSpace * value, 0);
+                }
+                postInvalidate();
+            }
+        });
+        animator.start();
     }
 }

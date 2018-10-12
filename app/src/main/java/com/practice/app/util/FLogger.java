@@ -17,6 +17,14 @@ public final class FLogger {
         Log.d(TAG_MSG, "" + msg);
     }
 
+    public static void w(Object msg) {
+        Log.w(TAG_MSG, "" + msg);
+    }
+
+    public static void i(Object msg) {
+        Log.i(TAG_MSG, "" + msg);
+    }
+
     public static void logException(Exception e) {
         if (e != null) {
             e.printStackTrace();
