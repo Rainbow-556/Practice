@@ -23,7 +23,12 @@ import java.util.LinkedList;
  * Created by lixiang on 2018/9/22.
  */
 public final class LoopViewPagerActivity extends AppCompatActivity {
+    private static final int STATE_IDLE = 1;
+    private static final int STATE_GOING_LEFT = 2;
+    private static final int STATE_GOING_RIGHT = 3;
     private FrameLayout mFrameLayout;
+    private int mState;
+    private int oldPage;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,7 +60,6 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         final MyAdapter adapter = new MyAdapter();
         adapter.setData(list);
         pager.setAdapter(adapter);
-        pager.setCurrentItem(3 * list.size());
         final int currentItem = pager.getCurrentItem() % size;
         for (int i = 0; i < size; i++) {
             RoundRectIndicatorView view = (RoundRectIndicatorView) indicators.getChildAt(i);
@@ -67,66 +71,70 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         }
         // anim
         pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            int lastPosition, lastItem, currItem;
-            boolean isIdle;
+            int currPage, lastPage = -1;
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                if (isIdle && positionOffset > 0) {
-                    lastPosition = pager.getCurrentItem();
-                    FLogger.w("lastPosition=" + lastPosition);
+                if (mState == STATE_IDLE && positionOffset > 0) {
+                    oldPage = pager.getCurrentItem();
+                    mState = position == oldPage ? STATE_GOING_RIGHT : STATE_GOING_LEFT;
+                    FLogger.i("oldPage=" + oldPage);
                 }
-                isIdle = positionOffset <= 0.001 || positionOffset >= 0.998f;
-                if (isIdle) {
+                boolean goingRight = position == oldPage;
+                if (mState == STATE_GOING_RIGHT && !goingRight)
+                    mState = STATE_GOING_LEFT;
+                else if (mState == STATE_GOING_LEFT && goingRight)
+                    mState = STATE_GOING_RIGHT;
+                if (positionOffset < 0.005 || positionOffset > 0.995f) {
+                    mState = STATE_IDLE;
                     return;
                 }
-                boolean toNext = position == lastPosition;
-                FLogger.msg("toNext=" + toNext + ", position=" + position + ", positionOffset=" + positionOffset);
-                int realLastPosition = adapter.getRealPosition(lastPosition);
-                RoundRectIndicatorView leftDotView = (RoundRectIndicatorView) indicators.getChildAt(realLastPosition);
-                RoundRectIndicatorView rightDotView = null;
-                if (toNext) {
-                    if (adapter.getRealPosition(lastPosition) == adapter.getRealCount() - 1) {
-                        if (leftDotView != null) {
-                            leftDotView.update(true, 1 - positionOffset);
-                        }
-                        return;
-                    }
+                FLogger.msg("goingRight=" + goingRight + ", position=" + position + ", positionOffset=" + positionOffset);
+                int realLeftPosition = adapter.getRealPosition(position);
+                int realRightPosition = adapter.getRealPosition(position + 1);
+                RoundRectIndicatorView leftDotView = null, rightDotView = null;
+                if (goingRight) {
+                    leftDotView = (RoundRectIndicatorView) indicators.getChildAt(realLeftPosition);
                     if (leftDotView != null) {
                         leftDotView.update(true, 1 - positionOffset);
                     }
-                    rightDotView = (RoundRectIndicatorView) indicators.getChildAt(adapter.getRealPosition(lastPosition + 1));
-                    if (rightDotView != null) {
-                        rightDotView.update(false, positionOffset);
+                    if (realRightPosition != 0) {
+                        rightDotView = (RoundRectIndicatorView) indicators.getChildAt(realRightPosition);
+                        if (rightDotView != null) {
+                            rightDotView.update(false, positionOffset);
+                        }
                     }
                 } else {
-                    if (adapter.getRealPosition(lastPosition) == 0) {
+                    if (realLeftPosition != adapter.getRealCount() - 1) {
+                        leftDotView = (RoundRectIndicatorView) indicators.getChildAt(realLeftPosition);
                         if (leftDotView != null) {
-                            leftDotView.update(false, positionOffset);
+                            leftDotView.update(true, 1 - positionOffset);
                         }
-                        return;
                     }
-                    if (leftDotView != null) {
-                        leftDotView.update(false, positionOffset);
-                    }
-                    rightDotView = (RoundRectIndicatorView) indicators.getChildAt(adapter.getRealPosition(lastPosition - 1));
+                    rightDotView = (RoundRectIndicatorView) indicators.getChildAt(realRightPosition);
                     if (rightDotView != null) {
-                        rightDotView.update(true, 1 - positionOffset);
+                        rightDotView.update(false, positionOffset);
                     }
                 }
             }
 
             @Override
             public void onPageSelected(int position) {
-                currItem = position;
+                if (lastPage == -1) {
+                    lastPage = position;
+                } else {
+                    lastPage = currPage;
+                }
+                currPage = position;
+                FLogger.w("onPageSelected=" + position);
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
                 if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    int realLastItem = adapter.getRealPosition(lastItem);
-                    int realCurrItem = adapter.getRealPosition(currItem);
-                    if (realLastItem == adapter.getRealCount() - 1 && realCurrItem == 0) {
+                    int realOldPage = adapter.getRealPosition(lastPage);
+                    int realCurrPage = adapter.getRealPosition(currPage);
+                    if (realOldPage == adapter.getRealCount() - 1 && realCurrPage == 0) {
                         // 从最后一页滑到第一页
                         int duration = 150;
                         ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
@@ -145,7 +153,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                             RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
                             dot.animateToOtherEnd(duration);
                         }
-                    } else if (realLastItem == 0 && realCurrItem == adapter.getRealCount() - 1) {
+                    } else if (realOldPage == 0 && realCurrPage == adapter.getRealCount() - 1) {
                         // 从第一页滑到最后一页
                         final int childCount = indicators.getChildCount();
                         int duration = 150;
@@ -165,7 +173,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                             dot.animateToOtherEnd(duration);
                         }
                     }
-                    lastItem = currItem;
+                    lastPage = currPage;
                 }
             }
         });
@@ -174,9 +182,6 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
 
             @Override
             public void transformPage(View page, float position) {
-//                int dotIndex = (int) page.getTag();
-//                RoundRectIndicatorView dotView = (RoundRectIndicatorView) indicators.getChildAt(dotIndex);
-                // page
                 if (position >= -1 && position < 0) {
                     // [-1, 0]，左边的item -> 中间
                     page.setPivotX(page.getWidth());
@@ -184,10 +189,6 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     float scale = 1 + pageMaxScale * position;
                     page.setScaleX(scale);
                     page.setScaleY(scale);
-                    //
-//                    dotView.setPivotX(0);
-//                    dotView.setScaleX(dotMaxScale + dotMaxScale * (1 + position));
-//                    dotView.update(true, 1 + position);
                 } else if (position >= 0 && position <= 1) {
                     // [0, 1]，中间的item -> 右边
                     page.setPivotX(0);
@@ -195,15 +196,6 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     float scale = 1 - pageMaxScale * position;
                     page.setScaleX(scale);
                     page.setScaleY(scale);
-                    //
-//                    if (dotIndex == 0) {
-//                        dotView.setPivotX(0);
-//                    } else {
-//                        dotView.setPivotX(dotView.getWidth());
-//                    }
-//                    dotView.setScaleX(1 - dotMaxScale * position);
-//                    float add = 0.5f;
-//                    dotView.update(false, 1 - position);
                 } else {
                     if (position < -1) {
                         page.setPivotX(page.getWidth());
@@ -217,6 +209,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                 }
             }
         });
+        pager.setCurrentItem(3 * list.size());
     }
 
     private LinearLayout addIndicators(int size) {
@@ -226,13 +219,10 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         lpParent.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
         lpParent.bottomMargin = 170 * 3;
+        int dotHeight = 5 * 3, dotWidth = dotHeight * 2;
         for (int i = 0; i < size; i++) {
             RoundRectIndicatorView view = new RoundRectIndicatorView(this);
-            LinearLayout.LayoutParams lpIndicator = new LinearLayout.LayoutParams(10 * 3,
-                    15);
-            if (i != 0) {
-//                lpIndicator.leftMargin = 3;
-            }
+            LinearLayout.LayoutParams lpIndicator = new LinearLayout.LayoutParams(dotWidth, dotHeight);
             parent.addView(view, lpIndicator);
         }
         mFrameLayout.addView(parent, lpParent);
