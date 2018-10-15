@@ -3,6 +3,8 @@ package com.practice.app.android.looppager;
 import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -23,12 +25,15 @@ import java.util.LinkedList;
  * Created by lixiang on 2018/9/22.
  */
 public final class LoopViewPagerActivity extends AppCompatActivity {
-    private static final int STATE_IDLE = 1;
-    private static final int STATE_GOING_LEFT = 2;
-    private static final int STATE_GOING_RIGHT = 3;
     private FrameLayout mFrameLayout;
-    private int mState;
-    private int oldPage;
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            mViewPager.setCurrentItem(mViewPager.getCurrentItem() + 1, true);
+            mHandler.sendEmptyMessageDelayed(0, 3000);
+        }
+    };
+    private ViewPager mViewPager;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,15 +41,15 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         mFrameLayout = new FrameLayout(this);
         mFrameLayout.setBackgroundColor(0xffedcfae);
         mFrameLayout.setClipChildren(false);
-        ViewPager pager = new ViewPager(this);
-        pager.setClipChildren(false);
+        mViewPager = new ViewPager(this);
+        mViewPager.setClipChildren(false);
         int pagerHeight = 140 * 3, margin = 20 * 3;
         FrameLayout.LayoutParams lpPager = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, pagerHeight);
         lpPager.leftMargin = margin;
         lpPager.rightMargin = margin;
         lpPager.gravity = Gravity.CENTER;
-        mFrameLayout.addView(pager, lpPager);
-        initPager(pager);
+        mFrameLayout.addView(mViewPager, lpPager);
+        initPager(mViewPager);
         setContentView(mFrameLayout);
     }
 
@@ -70,26 +75,16 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
             }
         }
         // anim
-        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            int currPage, lastPage = -1;
+        ViewPager.OnPageChangeListener onPageChangeListener = new ViewPager.OnPageChangeListener() {
+            int currPage, lastPage = -1, oldPage;
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                if (mState == STATE_IDLE && positionOffset > 0) {
-                    oldPage = pager.getCurrentItem();
-                    mState = position == oldPage ? STATE_GOING_RIGHT : STATE_GOING_LEFT;
-                    FLogger.i("oldPage=" + oldPage);
-                }
-                boolean goingRight = position == oldPage;
-                if (mState == STATE_GOING_RIGHT && !goingRight)
-                    mState = STATE_GOING_LEFT;
-                else if (mState == STATE_GOING_LEFT && goingRight)
-                    mState = STATE_GOING_RIGHT;
+                final boolean goingRight = position == oldPage;
+                FLogger.msg("goingRight=" + goingRight + ", position=" + position + ", positionOffset=" + positionOffset);
                 if (positionOffset < 0.005 || positionOffset > 0.995f) {
-                    mState = STATE_IDLE;
                     return;
                 }
-                FLogger.msg("goingRight=" + goingRight + ", position=" + position + ", positionOffset=" + positionOffset);
                 int realLeftPosition = adapter.getRealPosition(position);
                 int realRightPosition = adapter.getRealPosition(position + 1);
                 RoundRectIndicatorView leftDotView = null, rightDotView = null;
@@ -131,7 +126,11 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
 
             @Override
             public void onPageScrollStateChanged(int state) {
+                // 从倒数第二页快速滑动到倒数第一页，再滑到第一页时，中间不会触发SCROLL_STATE_IDLE事件，
+                // 导致oldPage没有更新，goingRight的值是错误的，待解决
                 if (state == ViewPager.SCROLL_STATE_IDLE) {
+                    FLogger.i("SCROLL_STATE_IDLE");
+                    oldPage = pager.getCurrentItem();
                     int realOldPage = adapter.getRealPosition(lastPage);
                     int realCurrPage = adapter.getRealPosition(currPage);
                     if (realOldPage == adapter.getRealCount() - 1 && realCurrPage == 0) {
@@ -176,7 +175,8 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     lastPage = currPage;
                 }
             }
-        });
+        };
+        pager.addOnPageChangeListener(onPageChangeListener);
         pager.setPageTransformer(true, new ViewPager.PageTransformer() {
             float pageMaxScale = 0.1f;
 
@@ -210,6 +210,13 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
             }
         });
         pager.setCurrentItem(3 * list.size());
+        onPageChangeListener.onPageScrollStateChanged(ViewPager.SCROLL_STATE_IDLE);
+        pager.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mHandler.sendEmptyMessageDelayed(0, 3000);
+            }
+        }, 500);
     }
 
     private LinearLayout addIndicators(int size) {
@@ -260,7 +267,7 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
             } else {
                 textView = cacheViews.remove();
             }
-            textView.setText(data.get(realPosition));
+            textView.setText((data.get(realPosition) + ", " + position));
             textView.setTag(realPosition);
             container.addView(textView);
             return textView;
@@ -290,5 +297,11 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         void setData(ArrayList<String> list) {
             data.addAll(list);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mHandler.removeCallbacksAndMessages(null);
     }
 }
