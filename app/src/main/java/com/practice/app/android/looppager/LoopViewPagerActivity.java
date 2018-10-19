@@ -77,21 +77,24 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
         // anim
         ViewPager.OnPageChangeListener onPageChangeListener = new ViewPager.OnPageChangeListener() {
             int currPage, lastPage = -1, oldPage;
+            boolean goingRight, isDrag;
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                final boolean goingRight = position == oldPage;
                 FLogger.msg("goingRight=" + goingRight + ", position=" + position + ", positionOffset=" + positionOffset);
                 if (positionOffset < 0.005 || positionOffset > 0.995f) {
                     return;
                 }
+                goingRight = position == oldPage;
                 int realLeftPosition = adapter.getRealPosition(position);
                 int realRightPosition = adapter.getRealPosition(position + 1);
                 RoundRectIndicatorView leftDotView = null, rightDotView = null;
                 if (goingRight) {
-                    leftDotView = (RoundRectIndicatorView) indicators.getChildAt(realLeftPosition);
-                    if (leftDotView != null) {
-                        leftDotView.update(true, 1 - positionOffset);
+                    if (realLeftPosition != adapter.getRealCount() - 1) {
+                        leftDotView = (RoundRectIndicatorView) indicators.getChildAt(realLeftPosition);
+                        if (leftDotView != null) {
+                            leftDotView.update(true, 1 - positionOffset);
+                        }
                     }
                     if (realRightPosition != 0) {
                         rightDotView = (RoundRectIndicatorView) indicators.getChildAt(realRightPosition);
@@ -106,9 +109,11 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                             leftDotView.update(true, 1 - positionOffset);
                         }
                     }
-                    rightDotView = (RoundRectIndicatorView) indicators.getChildAt(realRightPosition);
-                    if (rightDotView != null) {
-                        rightDotView.update(false, positionOffset);
+                    if (realRightPosition != 0) {
+                        rightDotView = (RoundRectIndicatorView) indicators.getChildAt(realRightPosition);
+                        if (rightDotView != null) {
+                            rightDotView.update(false, positionOffset);
+                        }
                     }
                 }
             }
@@ -121,58 +126,75 @@ public final class LoopViewPagerActivity extends AppCompatActivity {
                     lastPage = currPage;
                 }
                 currPage = position;
+                animOnLoop();
                 FLogger.w("onPageSelected=" + position);
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
                 // 从倒数第二页快速滑动到倒数第一页，再滑到第一页时，中间不会触发SCROLL_STATE_IDLE事件，
-                // 导致oldPage没有更新，goingRight的值是错误的，待解决
+                // 导致oldPage没有更新，goingRight的值是错误的，解决方案是在SCROLL_STATE_SETTLING时保存oldPage
                 if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    FLogger.i("SCROLL_STATE_IDLE");
+                    isDrag = false;
                     oldPage = pager.getCurrentItem();
-                    int realOldPage = adapter.getRealPosition(lastPage);
-                    int realCurrPage = adapter.getRealPosition(currPage);
-                    if (realOldPage == adapter.getRealCount() - 1 && realCurrPage == 0) {
-                        // 从最后一页滑到第一页
-                        int duration = 150;
-                        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
-                        animator.setDuration(duration);
-                        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                            @Override
-                            public void onAnimationUpdate(ValueAnimator animation) {
-                                float value = (float) animation.getAnimatedValue();
-                                RoundRectIndicatorView firstDot = (RoundRectIndicatorView) indicators.getChildAt(0);
-                                firstDot.update(true, value);
-                            }
-                        });
-                        animator.start();
-                        int childCount = indicators.getChildCount();
-                        for (int i = 1; i < childCount; i++) {
-                            RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
-                            dot.animateToOtherEnd(duration);
-                        }
-                    } else if (realOldPage == 0 && realCurrPage == adapter.getRealCount() - 1) {
-                        // 从第一页滑到最后一页
-                        final int childCount = indicators.getChildCount();
-                        int duration = 150;
-                        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
-                        animator.setDuration(duration);
-                        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                            @Override
-                            public void onAnimationUpdate(ValueAnimator animation) {
-                                float value = (float) animation.getAnimatedValue();
-                                RoundRectIndicatorView lastDot = (RoundRectIndicatorView) indicators.getChildAt(childCount - 1);
-                                lastDot.update(false, value);
-                            }
-                        });
-                        animator.start();
-                        for (int i = 0; i < childCount - 1; i++) {
-                            RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
-                            dot.animateToOtherEnd(duration);
-                        }
+                    FLogger.i("SCROLL_STATE_IDLE");
+                } else if (state == ViewPager.SCROLL_STATE_SETTLING) {
+                    // SCROLL_STATE_SETTLING状态会在onPageSelected()之前回调，所以在这里保存oldPage
+                    FLogger.i("SCROLL_STATE_SETTLING");
+                    if (isDrag) {
+                        oldPage = pager.getCurrentItem();
                     }
-                    lastPage = currPage;
+                } else if (state == ViewPager.SCROLL_STATE_DRAGGING) {
+                    FLogger.i("SCROLL_STATE_DRAGGING");
+                    isDrag = true;
+                }
+            }
+
+            private void animOnLoop() {
+                int realOldPage = adapter.getRealPosition(lastPage);
+                int realCurrPage = adapter.getRealPosition(currPage);
+                if (goingRight && realOldPage == adapter.getRealCount() - 1 && realCurrPage == 0) {
+                    // 从最后一页滑到第一页
+                    int duration = 150;
+                    ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
+                    animator.setDuration(duration);
+                    animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            float value = (float) animation.getAnimatedValue();
+                            RoundRectIndicatorView firstDot = (RoundRectIndicatorView) indicators.getChildAt(0);
+                            firstDot.update(true, value);
+                        }
+                    });
+                    animator.start();
+                    int childCount = indicators.getChildCount();
+                    for (int i = 1; i < childCount - 1; i++) {
+                        RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
+                        dot.animateToOtherEnd(duration);
+                    }
+                    RoundRectIndicatorView lastDot = (RoundRectIndicatorView) indicators.getChildAt(childCount - 1);
+                    lastDot.update(false, 0);
+                } else if (!goingRight && realOldPage == 0 && realCurrPage == adapter.getRealCount() - 1) {
+                    // 从第一页滑到最后一页
+                    final int childCount = indicators.getChildCount();
+                    int duration = 150;
+                    ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
+                    animator.setDuration(duration);
+                    animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            float value = (float) animation.getAnimatedValue();
+                            RoundRectIndicatorView lastDot = (RoundRectIndicatorView) indicators.getChildAt(childCount - 1);
+                            lastDot.update(false, value);
+                        }
+                    });
+                    animator.start();
+                    for (int i = 1; i < childCount - 1; i++) {
+                        RoundRectIndicatorView dot = (RoundRectIndicatorView) indicators.getChildAt(i);
+                        dot.animateToOtherEnd(duration);
+                    }
+                    RoundRectIndicatorView firstDot = (RoundRectIndicatorView) indicators.getChildAt(0);
+                    firstDot.update(true, 0);
                 }
             }
         };
