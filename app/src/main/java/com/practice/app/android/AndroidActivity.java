@@ -7,6 +7,7 @@ import android.view.View;
 
 import com.practice.app.R;
 import com.practice.app.android.bus.BusFirstActivity;
+import com.practice.app.android.liststickyheader.ListStickyHeaderActivity;
 import com.practice.app.android.looppager.LoopViewPagerActivity;
 
 /**
@@ -19,6 +20,7 @@ public final class AndroidActivity extends AppCompatActivity implements View.OnC
         setContentView(R.layout.activity_android);
         findViewById(R.id.btn_bus).setOnClickListener(this);
         findViewById(R.id.btn_pager).setOnClickListener(this);
+        findViewById(R.id.btn_sticky_header).setOnClickListener(this);
     }
 
     @Override
@@ -29,6 +31,9 @@ public final class AndroidActivity extends AppCompatActivity implements View.OnC
                 break;
             case R.id.btn_pager:
                 startActivity(new Intent(this, LoopViewPagerActivity.class));
+                break;
+            case R.id.btn_sticky_header:
+                startActivity(new Intent(this, ListStickyHeaderActivity.class));
                 break;
         }
     }
