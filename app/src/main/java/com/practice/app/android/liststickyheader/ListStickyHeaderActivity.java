@@ -28,7 +28,8 @@ public final class ListStickyHeaderActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.rv_sticky);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter = new MyAdapter();
-        StickyHeaderItemDecoration stickyHeaderItemDecoration = new StickyHeaderItemDecoration();
+//        StickyHeaderItemDecoration stickyHeaderItemDecoration = new StickyHeaderItemDecoration();
+        CustomStickyHeaderItemDecoration stickyHeaderItemDecoration = new CustomStickyHeaderItemDecoration(this, R.layout.header_custom);
         stickyHeaderItemDecoration.setDataProvider(mAdapter);
         mRecyclerView.addItemDecoration(stickyHeaderItemDecoration);
         initData();
