@@ -23,5 +23,6 @@
         <activity android:name=".android.bus.BusSecondActivity"/>
         <activity android:name=".android.looppager.LoopViewPagerActivity"/>
         <activity android:name=".android.liststickyheader.ListStickyHeaderActivity"/>
+        <activity android:name=".android.nestedscroll.NestedScrollActivity"/>
     </application>
 </manifest>
