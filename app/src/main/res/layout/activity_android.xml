@@ -31,5 +31,10 @@
             android:layout_width="200dp"
             android:layout_height="45dp"
             android:text="Nested scroll"/>
+        <Button
+            android:id="@+id/btn_refresh"
+            android:layout_width="200dp"
+            android:layout_height="45dp"
+            android:text="Refresh layout"/>
     </LinearLayout>
 </ScrollView>

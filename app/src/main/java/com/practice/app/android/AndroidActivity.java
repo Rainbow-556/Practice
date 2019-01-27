@@ -10,6 +10,7 @@ import com.practice.app.android.bus.BusFirstActivity;
 import com.practice.app.android.liststickyheader.ListStickyHeaderActivity;
 import com.practice.app.android.looppager.LoopViewPagerActivity;
 import com.practice.app.android.nestedscroll.NestedScrollActivity;
+import com.practice.app.android.refresh.RefreshLayoutActivity;
 
 /**
  * Created by lixiang on 2018/9/16.
@@ -23,6 +24,7 @@ public final class AndroidActivity extends AppCompatActivity implements View.OnC
         findViewById(R.id.btn_pager).setOnClickListener(this);
         findViewById(R.id.btn_sticky_header).setOnClickListener(this);
         findViewById(R.id.btn_nested_scroll).setOnClickListener(this);
+        findViewById(R.id.btn_refresh).setOnClickListener(this);
     }
 
     @Override
@@ -39,6 +41,9 @@ public final class AndroidActivity extends AppCompatActivity implements View.OnC
                 break;
             case R.id.btn_nested_scroll:
                 startActivity(new Intent(this, NestedScrollActivity.class));
+                break;
+            case R.id.btn_refresh:
+                startActivity(new Intent(this, RefreshLayoutActivity.class));
                 break;
         }
     }

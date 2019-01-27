@@ -9,7 +9,6 @@ import android.support.v4.view.NestedScrollingParentHelper;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -90,12 +89,12 @@ public final class NestedScrollLinearLayout2 extends LinearLayout implements Nes
 
     @Override
     public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
-        mNestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes);
+        mNestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes, type);
     }
 
     @Override
     public void onStopNestedScroll(@NonNull View target, int type) {
-        mNestedScrollingParentHelper.onStopNestedScroll(target);
+        mNestedScrollingParentHelper.onStopNestedScroll(target, type);
     }
 
     @Override
@@ -124,20 +123,8 @@ public final class NestedScrollLinearLayout2 extends LinearLayout implements Nes
     }
 
     @Override
-    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
-        // velocityY > 0：手指向上滑，velocityY < 0：手指向下滑
-        Log.e("lx", String.valueOf("onNestedFling(): velocityY=" + velocityY));
-        return false;
-    }
-
-    @Override
-    public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
-        return false;
-    }
-
-    @Override
     public int getNestedScrollAxes() {
-        return 0;
+        return mNestedScrollingParentHelper.getNestedScrollAxes();
     }
 
     private void animateScroll(float velocityY) {

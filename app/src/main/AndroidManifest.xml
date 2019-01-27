@@ -24,5 +24,6 @@
         <activity android:name=".android.looppager.LoopViewPagerActivity"/>
         <activity android:name=".android.liststickyheader.ListStickyHeaderActivity"/>
         <activity android:name=".android.nestedscroll.NestedScrollActivity"/>
+        <activity android:name=".android.refresh.RefreshLayoutActivity"/>
     </application>
 </manifest>
