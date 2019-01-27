@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.practice.app.android.nestedscroll.NestedScrollLinearLayout
+<com.practice.app.android.nestedscroll.NestedScrollLinearLayout2
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -7,7 +7,7 @@
     <View
         android:id="@+id/v_top"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="130dp"
         android:background="#acd"/>
     <LinearLayout
         android:layout_width="match_parent"
@@ -69,4 +69,4 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#a48"/>
-</com.practice.app.android.nestedscroll.NestedScrollLinearLayout>
+</com.practice.app.android.nestedscroll.NestedScrollLinearLayout2>
