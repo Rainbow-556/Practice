@@ -21,7 +21,7 @@ import android.widget.LinearLayout;
 public final class RefreshLayout extends LinearLayout implements NestedScrollingParent2 {
     private NestedScrollingParentHelper mNestedScrollingParentHelper;
     private RefreshHeader mRefreshHeader;
-    private float mDamping = 0.4f;
+    private float mDamping = 0.75f;
     private boolean isRefreshing;
     private ValueAnimator mScrollHeaderBackAnimator;
 

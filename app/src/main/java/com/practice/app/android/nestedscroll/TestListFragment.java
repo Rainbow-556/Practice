@@ -36,21 +36,21 @@ public final class TestListFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         Log.e("lx", String.valueOf("TestListFragment onCreateView"));
-//        if (mRefreshLayout == null) {
-//            mAdapter = new MyAdapter();
-//            mRefreshLayout = (SmartRefreshLayout) inflater.inflate(R.layout.fragment_test_list, container, false);
-//            mRecyclerView = mRefreshLayout.findViewById(R.id.list);
-//            mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-//            mRecyclerView.setAdapter(mAdapter);
-//        }
-        if (mRecyclerView == null) {
+        if (mRefreshLayout == null) {
             mAdapter = new MyAdapter();
-            mRecyclerView = (RecyclerView) inflater.inflate(R.layout.fragment_test_list, container, false);
+            mRefreshLayout = (SmartRefreshLayout) inflater.inflate(R.layout.fragment_test_list, container, false);
+            mRecyclerView = mRefreshLayout.findViewById(R.id.list);
             mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
             mRecyclerView.setAdapter(mAdapter);
         }
+//        if (mRecyclerView == null) {
+//            mAdapter = new MyAdapter();
+//            mRecyclerView = (RecyclerView) inflater.inflate(R.layout.fragment_test_list, container, false);
+//            mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+//            mRecyclerView.setAdapter(mAdapter);
+//        }
         mockData();
-        return mRecyclerView;
+        return mRefreshLayout;
     }
 
     private void mockData() {
