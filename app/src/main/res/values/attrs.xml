@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="NestedScrollLinearLayout">
+        <attr name="nsll_headerViewId" format="reference"/>
+        <attr name="nsll_titleViewId" format="reference"/>
+        <attr name="nsll_titleTextViewId" format="reference"/>
+        <attr name="nsll_tabViewId" format="reference"/>
+        <attr name="nsll_contentViewId" format="reference"/>
+    </declare-styleable>
+</resources>
