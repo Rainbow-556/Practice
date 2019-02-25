@@ -24,4 +24,7 @@ dependencies {
     implementation 'com.android.support:recyclerview-v7:27.1.1'
     //1.0.5 当1.1.0出现问题可以回退到1.0.5.1
     implementation 'com.scwang.smartrefresh:SmartRefreshLayout:1.0.5.1'
+    implementation ('com.airbnb.android:lottie:2.7.0') {
+        exclude group: 'com.android.support'
+    }
 }

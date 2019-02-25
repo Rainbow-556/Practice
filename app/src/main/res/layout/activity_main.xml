@@ -23,8 +23,15 @@
             android:text="android"/>
         <View
             android:id="@+id/view"
-            android:layout_marginTop="30dp"
             android:layout_width="200dp"
-            android:layout_height="50dp"/>
+            android:layout_height="50dp"
+            android:layout_marginTop="30dp"/>
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottie_advantage_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:lottie_autoPlay="true"
+            app:lottie_fileName="lottie/navigation_eye_right_white.json"
+            tools:background="#ddd"/>
     </LinearLayout>
 </ScrollView>

@@ -25,5 +25,6 @@
         <activity android:name=".android.liststickyheader.ListStickyHeaderActivity"/>
         <activity android:name=".android.nestedscroll.NestedScrollActivity"/>
         <activity android:name=".android.refresh.RefreshLayoutActivity"/>
+        <activity android:name=".android.earthwormindicator.EarthwormIndicatorActivity"/>
     </application>
 </manifest>
